@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conectar à IA — ControleGastos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: #000; color: #E3E5EA; min-height: 100vh;
+    display: flex; justify-content: center; padding: 24px 16px 64px;
+  }
+  .wrap { width: 100%; max-width: 520px; }
+  h1 { font-size: 24px; margin: 12px 0 8px; }
+  h2 { font-size: 17px; margin: 28px 0 10px; }
+  p, li { color: #9AA3B2; font-size: 15px; line-height: 1.55; }
+  .lead { font-size: 16px; }
+  .card {
+    background: #1A1B21; border: 1px solid #2A2C35; border-radius: 16px;
+    padding: 18px; margin: 14px 0;
+  }
+  .step { display: flex; gap: 12px; margin-bottom: 14px; }
+  .num {
+    flex: none; width: 26px; height: 26px; border-radius: 13px;
+    background: #E3E5EA; color: #15161B; font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; margin-top: 2px;
+  }
+  .step b { color: #E3E5EA; display: block; margin-bottom: 2px; font-size: 15px; }
+  .urlbox {
+    display: flex; gap: 8px; align-items: center;
+    background: #000; border: 1px solid #2A2C35; border-radius: 12px;
+    padding: 10px 12px; margin: 10px 0;
+  }
+  .urlbox code {
+    flex: 1; font-size: 12px; color: #E3E5EA; word-break: break-all;
+    font-family: ui-monospace, Consolas, monospace;
+  }
+  button {
+    flex: none; border: 0; border-radius: 9px; padding: 9px 14px;
+    background: #E3E5EA; color: #15161B; font-weight: 600; font-size: 13px; cursor: pointer;
+  }
+  .ex { background: #000; border: 1px solid #2A2C35; border-radius: 10px; padding: 10px 12px; margin: 6px 0; font-size: 14px; color: #E3E5EA; }
+  .note { font-size: 13px; color: #6B7280; margin-top: 6px; }
+  a { color: #E3E5EA; }
+  ul { padding-left: 18px; }
+  li { margin-bottom: 6px; }
+  .pill { display: inline-block; background: #1A1B21; border: 1px solid #2A2C35; border-radius: 999px; padding: 3px 10px; font-size: 12px; color: #9AA3B2; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💬 Converse com seus gastos na IA</h1>
+  <p class="lead">Conecte o ControleGastos ao Claude e pergunte em linguagem natural:</p>
+
+  <div class="card">
+    <div class="ex">"Quanto gastei em junho?"</div>
+    <div class="ex">"Compara meus gastos dos últimos 3 meses"</div>
+    <div class="ex">"Lista minhas compras da Amazon em março"</div>
+    <div class="ex">"Qual categoria mais pesou esse mês?"</div>
+  </div>
+
+  <h2>O que você precisa</h2>
+  <p>Uma conta <b>Claude Pro</b> (plano pago do <a href="https://claude.ai" target="_blank">claude.ai</a>) — conectores personalizados fazem parte do plano pago. A conexão usa a <b>mesma conta Google do app</b>, e a IA só enxerga os <b>seus</b> lançamentos (somente leitura).</p>
+
+  <h2>Passo a passo</h2>
+  <div class="card">
+    <div class="step"><div class="num">1</div><div>
+      <b>Copie o endereço do conector</b>
+      <div class="urlbox">
+        <code id="url">https://fkmwureenhccphsgbzli.supabase.co/functions/v1/mcp</code>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('url').textContent).then(()=>{this.textContent='Copiado!';setTimeout(()=>this.textContent='Copiar',1500)})">Copiar</button>
+      </div>
+    </div></div>
+    <div class="step"><div class="num">2</div><div>
+      <b>Abra as configurações de conectores do Claude</b>
+      <p>Acesse <a href="https://claude.ai/settings/connectors" target="_blank">claude.ai/settings/connectors</a> (pelo navegador, logado na sua conta).</p>
+    </div></div>
+    <div class="step"><div class="num">3</div><div>
+      <b>Adicionar conector personalizado</b>
+      <p>Toque em <i>"Adicionar conector personalizado"</i>, cole o endereço copiado e confirme.</p>
+    </div></div>
+    <div class="step"><div class="num">4</div><div>
+      <b>Autorize com sua conta Google</b>
+      <p>Vai abrir a tela do ControleGastos → <i>Continuar com Google</i> (a mesma conta que você usa no app) → <i>Autorizar</i>.</p>
+    </div></div>
+    <div class="step"><div class="num">5</div><div>
+      <b>Use nas conversas</b>
+      <p>No app ou site do Claude, ative o conector <i>controlegastos</i> no menu de ferramentas da conversa e pergunte à vontade.</p>
+    </div></div>
+  </div>
+
+  <h2>Funciona em outras IAs?</h2>
+  <p>O conector usa o <b>MCP</b> (Model Context Protocol), um padrão aberto — não é exclusivo do Claude. Também funciona em outros apps de IA que aceitam conectores MCP com login, como o <b>ChatGPT</b> (em Configurações → Conectores, plano pago). O passo a passo é o mesmo: colar o endereço do conector e autorizar com o Google.</p>
+  <p class="note"><span class="pill">Claude ✓</span><span class="pill">ChatGPT ✓</span><span class="pill">Cursor ✓</span><span class="pill">Gemini (app) ainda não</span></p>
+
+  <h2>Segurança e privacidade</h2>
+  <ul>
+    <li>A IA só lê os lançamentos <b>da sua conta</b> — o filtro é feito pelo próprio banco de dados, vinculado ao seu login Google.</li>
+    <li>Acesso <b>somente leitura</b>: nada é criado, alterado ou apagado.</li>
+    <li>Pra desconectar a qualquer momento: remova o conector nas configurações do claude.ai.</li>
+  </ul>
+
+  <p class="note" style="margin-top:28px">ControleGastos — app pessoal de controle financeiro.</p>
+</div>
+</body>
+</html>
