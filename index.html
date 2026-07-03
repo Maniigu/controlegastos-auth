@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autorizar acesso — ControleGastos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: #000; color: #E3E5EA; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .card {
+    width: 100%; max-width: 400px; background: #1A1B21;
+    border: 1px solid #2A2C35; border-radius: 20px; padding: 28px;
+  }
+  h1 { font-size: 20px; margin-bottom: 6px; }
+  .sub { color: #9AA3B2; font-size: 14px; margin-bottom: 20px; }
+  .client {
+    background: #000; border: 1px solid #2A2C35; border-radius: 12px;
+    padding: 14px; margin-bottom: 16px; font-size: 15px;
+  }
+  .client b { display: block; margin-bottom: 4px; }
+  .scopes { color: #9AA3B2; font-size: 13px; }
+  .who { color: #9AA3B2; font-size: 13px; margin-bottom: 20px; }
+  button {
+    width: 100%; padding: 14px; border-radius: 12px; border: 0;
+    font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+  }
+  .primary { background: #E3E5EA; color: #15161B; }
+  .ghost { background: transparent; color: #9AA3B2; border: 1px solid #2A2C35; }
+  .err { color: #F87171; font-size: 13px; margin-top: 8px; white-space: pre-wrap; }
+  .hide { display: none; }
+  .center { text-align: center; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>ControleGastos</h1>
+  <p class="sub">Pedido de acesso aos seus dados</p>
+
+  <div id="loading" class="center">Carregando…</div>
+
+  <div id="login" class="hide">
+    <p class="sub">Entre com a mesma conta que você usa no app pra continuar.</p>
+    <button class="primary" id="btnGoogle">Continuar com Google</button>
+  </div>
+
+  <div id="consent" class="hide">
+    <div class="client">
+      <b id="clientName">Aplicativo</b>
+      <span class="scopes" id="clientScopes"></span>
+    </div>
+    <p class="who" id="who"></p>
+    <button class="primary" id="btnApprove">Autorizar</button>
+    <button class="ghost" id="btnDeny">Negar</button>
+  </div>
+
+  <p class="err hide" id="err"></p>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://fkmwureenhccphsgbzli.supabase.co";
+const PUBLISHABLE_KEY = "sb_publishable_u1Wt1ihs8mg-pu32rN78lA_3EmGfSO3";
+
+const sb = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
+  auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true },
+});
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => { for (const s of ["loading","login","consent"]) $(s).classList.add("hide"); $(id).classList.remove("hide"); };
+const fail = (m) => { $("err").textContent = m; $("err").classList.remove("hide"); };
+
+// authorization_id chega na query; guardamos no localStorage porque o
+// login com Google sai e volta da página (e a query se perde no caminho)
+const qs = new URLSearchParams(location.search);
+const authzId = qs.get("authorization_id") ?? localStorage.getItem("mcp_authz_id");
+if (qs.get("authorization_id")) localStorage.setItem("mcp_authz_id", qs.get("authorization_id"));
+
+async function main() {
+  if (!authzId) { show("login"); return fail("Pedido de autorização não encontrado. Refaça a conexão a partir do Claude."); }
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { show("login"); return; }
+
+  const { data, error } = await sb.auth.oauth.getAuthorizationDetails(authzId);
+  if (error) { show("login"); return fail("Erro ao carregar o pedido: " + error.message); }
+
+  const client = data?.client ?? {};
+  $("clientName").textContent = client.client_name ?? client.name ?? "Aplicativo externo";
+  $("clientScopes").textContent = "Acesso de leitura aos seus lançamentos (escopos: " + (data?.scope ?? "padrão") + ")";
+  $("who").textContent = "Conectando como " + (session.user.email ?? session.user.id);
+  show("consent");
+}
+
+$("btnGoogle").onclick = async () => {
+  // volta pra cá mesmo (URL limpa; o authorization_id está no localStorage)
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: location.origin + location.pathname },
+  });
+  if (error) fail(error.message);
+};
+
+$("btnApprove").onclick = async () => {
+  const { data, error } = await sb.auth.oauth.approveAuthorization(authzId);
+  if (error) return fail("Erro ao aprovar: " + error.message);
+  localStorage.removeItem("mcp_authz_id");
+  location.href = data.redirect_url;
+};
+
+$("btnDeny").onclick = async () => {
+  const { data, error } = await sb.auth.oauth.denyAuthorization(authzId);
+  if (error) return fail("Erro ao negar: " + error.message);
+  localStorage.removeItem("mcp_authz_id");
+  location.href = data.redirect_url;
+};
+
+main().catch((e) => fail(String(e)));
+</script>
+</body>
+</html>
